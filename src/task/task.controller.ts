@@ -28,8 +28,12 @@ export class TaskController {
   @Delete("tasks/:id")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteTask(@Param("id", ParseUUIDPipe) id: string): Promise<void> {
-
     return await this.taskService.deleteTask(id)
+  }
+
+  @Patch("tasks/:id")
+  async patchTask(@Param("id", ParseUUIDPipe) id: string, @Body() dto: UpdateTaskDto): Promise<Task| undefined> {
+    return await this.taskService.patchTask(id, dto);
   }
 
 }

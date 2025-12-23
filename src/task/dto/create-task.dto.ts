@@ -9,24 +9,4 @@ export class CreateTaskDto {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @IsOptional()
-  @IsEnum(Category)
-  category?: Category;
-
-  @IsOptional()
-  @IsEnum(Priority)
-  priority?: Priority;
-
-  @IsOptional()
-  @IsEnum(Status)
-  status?: Status;
-
-  @IsOptional()
-  @IsString()
-  assigned_to?: string;
-
-  @IsOptional()
-  @IsDateString()
-  due_date?: string; // stored as timestamp in DB
 }

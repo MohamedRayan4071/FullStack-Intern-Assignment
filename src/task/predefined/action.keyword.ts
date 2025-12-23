@@ -1,0 +1,17 @@
+export const actionVerbs: string[] = [
+  'schedule',
+  'fix',
+  'repair',
+  'inspect',
+  'check',
+  'review',
+  'update',
+  'install',
+  'diagnose',
+  'assign',
+  'notify',
+  'prepare',
+  'approve',
+  'generate',
+  'report',
+];

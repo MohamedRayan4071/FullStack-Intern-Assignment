@@ -1,4 +1,5 @@
 import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import * as entityInterface from '../predefined/entity.interface';
 
 @Entity({ name: 'tasks' })
 export class Task {
@@ -27,7 +28,7 @@ export class Task {
   due_date?: Date;
 
   @Column({ type: 'jsonb', nullable: true })
-  extracted_entities?: Record<string, any>;
+  extracted_entities?: entityInterface.Entity;
 
   @Column({ type: 'jsonb', nullable: true })
   suggested_actions?: string[];

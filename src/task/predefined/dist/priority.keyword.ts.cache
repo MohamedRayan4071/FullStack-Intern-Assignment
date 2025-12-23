@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true , configurable: true});
+//exports.priorityMap = void 0;
+exports.priorityMap = new Map([
+    ["high", ["urgent", "asap", "immediately", "today", "critical", "emergency"]],
+    ["medium", ["soon", "this week", "important"]],
+    ["low", []],
+]);
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicHJpb3JpdHkua2V5d29yZC5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi4uL3ByaW9yaXR5LmtleXdvcmQudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7O0FBQWEsUUFBQSxXQUFXLEdBQUcsSUFBSSxHQUFHLENBQW1CO0lBQ25ELENBQUMsTUFBTSxFQUFFLENBQUMsUUFBUSxFQUFFLE1BQU0sRUFBRSxhQUFhLEVBQUUsT0FBTyxFQUFFLFVBQVUsRUFBRSxXQUFXLENBQUMsQ0FBQztJQUM3RSxDQUFDLFFBQVEsRUFBRSxDQUFDLE1BQU0sRUFBRSxXQUFXLEVBQUUsV0FBVyxDQUFDLENBQUM7SUFDOUMsQ0FBQyxLQUFLLEVBQUUsRUFBRSxDQUFDO0NBQ1osQ0FBQyxDQUFDIiwic291cmNlc0NvbnRlbnQiOlsiZXhwb3J0IGNvbnN0IHByaW9yaXR5TWFwID0gbmV3IE1hcDxzdHJpbmcsIHN0cmluZ1tdPihbXG4gIFtcImhpZ2hcIiwgW1widXJnZW50XCIsIFwiYXNhcFwiLCBcImltbWVkaWF0ZWx5XCIsIFwidG9kYXlcIiwgXCJjcml0aWNhbFwiLCBcImVtZXJnZW5jeVwiXV0sXG4gIFtcIm1lZGl1bVwiLCBbXCJzb29uXCIsIFwidGhpcyB3ZWVrXCIsIFwiaW1wb3J0YW50XCJdXSxcbiAgW1wibG93XCIsIFtdXSxcbl0pO1xuIl19
+ /* _JS_SOURCE_HASH = "a4cc6aac238b18e2e680921cb2e31a960446bbfae76a400634f3b656ecdea3fd"; */

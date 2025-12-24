@@ -23,4 +23,8 @@ export class UpdateTaskDto extends PartialType(CreateTaskDto) {
     @IsOptional()
     @IsDateString()
     due_date?: string;
+
+    @IsOptional()
+    @IsString()
+    location?: string
 }

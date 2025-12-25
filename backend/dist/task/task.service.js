@@ -1,0 +1,126 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TaskService = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const task_entity_1 = require("./entities/task.entity");
+const typeorm_2 = require("typeorm");
+const task_history_entity_1 = require("./entities/task_history.entity");
+const get_task_dto_1 = require("./dto/get-task.dto");
+const class_transformer_1 = require("class-transformer");
+const task_provider_1 = require("./task.provider");
+let TaskService = class TaskService {
+    taskRepository;
+    taskHistoryRepository;
+    taskUtilities;
+    constructor(taskRepository, taskHistoryRepository, taskUtilities) {
+        this.taskRepository = taskRepository;
+        this.taskHistoryRepository = taskHistoryRepository;
+        this.taskUtilities = taskUtilities;
+    }
+    async getAllTasks(limit = 10, offset = 0) {
+        const tasks = await this.taskRepository
+            .createQueryBuilder('task')
+            .leftJoinAndSelect('task.taskHistory', 'history')
+            .orderBy('task.created_at', 'DESC')
+            .limit(limit)
+            .offset(offset)
+            .getMany();
+        return tasks.map((t) => (0, class_transformer_1.plainToInstance)(get_task_dto_1.GetTaskDTO, t));
+    }
+    async getTask(id) {
+        return this.taskRepository.findOne({ where: { id }, relations: ['taskHistory'] });
+    }
+    async createTask(createTaskData) {
+        const text = `${createTaskData.title ?? ''} ${createTaskData.description ?? ''}`.trim();
+        const category = this.taskUtilities.extractCategory(text);
+        const priority = this.taskUtilities.extractPriority(text);
+        const assigned_to = this.taskUtilities.extractAssignedPerson(text);
+        const due_date = this.taskUtilities.extractDueDate(text);
+        const suggested_actions = this.taskUtilities.getSuggestedActions(category);
+        const entity = {
+            dates: this.taskUtilities.extractDates(text),
+            people: assigned_to ? [assigned_to] : [],
+            locations: this.taskUtilities.extractLocations(text),
+            actions: this.taskUtilities.extractActions(text),
+        };
+        const task = this.taskRepository.create({
+            ...createTaskData,
+            id: this.taskUtilities.generateUUID(),
+            category,
+            priority,
+            assigned_to,
+            due_date,
+            status: 'pending',
+            extracted_entities: entity,
+            suggested_actions,
+            created_at: new Date(),
+        });
+        return await this.taskRepository.save(task);
+    }
+    async patchTask(id, dto) {
+        const oldTask = await this.taskRepository.findOne({ where: { id } });
+        if (!oldTask)
+            throw new common_1.NotFoundException('Task not found');
+        const text = `${dto.title ?? oldTask.title} ${dto.description ?? oldTask.description}`.trim();
+        if (dto.title || dto.description) {
+            dto.category = this.taskUtilities.extractCategory(text);
+            dto.priority = this.taskUtilities.extractPriority(text);
+            dto.assigned_to =
+                dto.assigned_to || this.taskUtilities.extractAssignedPerson(text);
+            dto.due_date = this.taskUtilities.extractDueDate(text);
+            dto.suggested_actions = this.taskUtilities.getSuggestedActions(dto.category);
+        }
+        const entity = {
+            dates: this.taskUtilities.extractDates(text),
+            people: dto.assigned_to ? [dto.assigned_to] : [],
+            locations: this.taskUtilities.extractLocations(text),
+            actions: this.taskUtilities.extractActions(text),
+        };
+        const task = await this.taskRepository.preload({
+            id,
+            ...dto,
+            extracted_entities: entity,
+            updated_at: new Date(),
+        });
+        if (!task)
+            throw new common_1.NotFoundException('Failed to preload task');
+        await this.taskRepository.save(task);
+        const taskHistory = this.taskHistoryRepository.create({
+            id: this.taskUtilities.generateUUID(),
+            action: 'updated',
+            changed_by: 'user',
+            task,
+            changed_at: new Date(),
+            old_value: oldTask,
+            new_value: dto,
+        });
+        await this.taskHistoryRepository.save(taskHistory);
+        return task;
+    }
+    async deleteTask(id) {
+        await this.taskRepository.delete(id);
+    }
+};
+exports.TaskService = TaskService;
+exports.TaskService = TaskService = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(task_entity_1.Task)),
+    __param(1, (0, typeorm_1.InjectRepository)(task_history_entity_1.TaskHistory)),
+    __param(2, (0, common_1.Inject)(task_provider_1.TaskUtilities)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        task_provider_1.TaskUtilities])
+], TaskService);

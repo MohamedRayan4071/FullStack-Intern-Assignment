@@ -9,6 +9,7 @@ import { GetTaskDTO } from './dto/get-task.dto';
 import { plainToInstance } from 'class-transformer';
 import { TaskUtilities } from './task.provider';
 import { Entity } from './predefined/entity.interface';
+import { CategoryKey } from './predefined/category.type';
 
 @Injectable()
 export class TaskService {
@@ -21,15 +22,20 @@ export class TaskService {
     private readonly taskUtilities: TaskUtilities,
   ) { }
 
-  async getAllTasks(limit = 10, offset = 0): Promise<GetTaskDTO[]> {
-    const query = this.taskRepository.createQueryBuilder('task');
-    query.limit(limit).offset(offset).orderBy('task.created_at', 'DESC');
-    const tasks = await query.getMany();
-    return tasks.map((t) => plainToInstance(GetTaskDTO, t));
-  }
+async getAllTasks(limit = 10, offset = 0): Promise<GetTaskDTO[]> {
+  const tasks = await this.taskRepository
+    .createQueryBuilder('task')
+    .leftJoinAndSelect('task.taskHistory', 'history')
+    .orderBy('task.created_at', 'DESC')
+    .limit(limit)
+    .offset(offset)
+    .getMany();
+
+  return tasks.map((t) => plainToInstance(GetTaskDTO, t));
+}
 
   async getTask(id: string): Promise<Task | null> {
-    return this.taskRepository.findOne({ where: { id } });
+    return this.taskRepository.findOne({ where: { id } , relations: ['taskHistory']});
   }
 
   async createTask(createTaskData: CreateTaskDto): Promise<Task> {
@@ -40,7 +46,7 @@ export class TaskService {
     const priority = this.taskUtilities.extractPriority(text);
     const assigned_to = this.taskUtilities.extractAssignedPerson(text);
     const due_date = this.taskUtilities.extractDueDate(text);
-    const suggested_actions = this.taskUtilities.getSuggestedActions(category);
+    const suggested_actions = this.taskUtilities.getSuggestedActions(category as CategoryKey);
 
     const entity: Entity = {
       dates: this.taskUtilities.extractDates(text),

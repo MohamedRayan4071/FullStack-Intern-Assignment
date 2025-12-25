@@ -1,13 +1,14 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, JoinColumn } from 'typeorm';
 import * as entityInterface from '../predefined/entity.interface';
+import { TaskHistory } from './task_history.entity';
 
 @Entity({ name: 'tasks' })
 export class Task {
   @PrimaryColumn('uuid', { name: 'id' })
-  id: string;
+  id!: string;
 
   @Column({ type: 'text', nullable: false })
-  title: string;
+  title!: string;
 
   @Column({ type: 'text', nullable: true })
   description?: string;
@@ -34,8 +35,11 @@ export class Task {
   suggested_actions?: string[];
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  updated_at: Date;
+  updated_at!: Date;
+
+  @OneToMany(() => TaskHistory, (taskHistory: TaskHistory) => taskHistory.task)
+  taskHistory?: TaskHistory[]
 }

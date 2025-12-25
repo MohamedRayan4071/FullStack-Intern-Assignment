@@ -15,7 +15,7 @@ export class TaskController {
     return await this.taskService.getAllTasks();
   }
 
-  @Get("task/:id")
+  @Get("tasks/:id")
   async getTask(@Param("id") id: string): Promise<GetTaskDTO | null> {
     return plainToInstance(GetTaskDTO, await this.taskService.getTask(id))
   }
@@ -32,7 +32,7 @@ export class TaskController {
   }
 
   @Patch("tasks/:id")
-  async patchTask(@Param("id", ParseUUIDPipe) id: string, @Body() dto: UpdateTaskDto): Promise<Task| undefined> {
+  async patchTask(@Param("id", ParseUUIDPipe) id: string, @Body() dto: UpdateTaskDto): Promise<Task | undefined> {
     return await this.taskService.patchTask(id, dto);
   }
 

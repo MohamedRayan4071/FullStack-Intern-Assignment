@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid'
 import { categoryMap } from './predefined/category.keyword';
 import { priorityMap } from './predefined/priority.keyword';
 import { actionVerbs } from './predefined/action.keyword';
+import { CategoryKey } from './predefined/category.type';
 
 @Injectable()
 export class TaskUtilities {
@@ -91,7 +92,7 @@ export class TaskUtilities {
     );
   }
 
-  getSuggestedActions(category: string): string[] {
+  getSuggestedActions(category: CategoryKey): string[] {
     return (
       suggested_actions[category] ||
       suggested_actions['general'] ||
@@ -100,7 +101,7 @@ export class TaskUtilities {
   }
 }
 
-const suggested_actions = {
+const suggested_actions: Record<CategoryKey, string[]> = {
   scheduling: ['Block calendar', 'Send invite', 'Prepare agenda', 'Set reminder'],
   finance: ['Check budget', 'Get approval', 'Generate invoice', 'Update records'],
   technical: [

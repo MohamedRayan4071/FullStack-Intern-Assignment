@@ -1,10 +1,9 @@
-import { IsString, IsOptional, IsEnum, IsDateString, IsNotEmpty } from 'class-validator';
-import { Category, Priority, Status } from '../enums/task.enums';
+import { IsString, IsOptional, IsNotEmpty } from 'class-validator';
 
 export class CreateTaskDto {
   @IsString()
   @IsNotEmpty()
-  title: string;
+  title!: string;
 
   @IsOptional()
   @IsString()

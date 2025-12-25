@@ -1,17 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { Server } from 'http';
-import express from 'express';
 import { ExpressAdapter } from '@nestjs/platform-express';
+import express from 'express';
 
-let cachedServer: Server;
+let cachedServer: any;
 
-export const handler = async (): Promise<Server> => {
+const bootstrapServer = async () => {
   if (!cachedServer) {
     const expressApp = express();
     const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
-
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -19,29 +17,29 @@ export const handler = async (): Promise<Server> => {
         transform: true,
       }),
     );
-
     await app.init();
-    cachedServer = expressApp.listen();
+    cachedServer = expressApp;
   }
-
   return cachedServer;
 };
 
-async function bootstrap() {
-  if (process.env.VERCEL) return; 
-
-  const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
-  const port = process.env.PORT ?? 3000;
-  await app.listen(port);
-  console.log(`🚀 App running locally on http://localhost:${port}`);
+export default async function handler(req: any, res: any) {
+  const server = await bootstrapServer();
+  return server(req, res);
 }
 
-bootstrap();
+if (!process.env.VERCEL) {
+  (async () => {
+    const app = await NestFactory.create(AppModule);
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    const port = process.env.PORT ?? 3000;
+    await app.listen(port);
+    console.log(`App running locally on http://localhost:${port}`);
+  })();
+}

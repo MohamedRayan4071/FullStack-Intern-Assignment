@@ -8,14 +8,19 @@ import 'package:task_manager_frontend/bloc/dto/update_dto.dart';
 part 'task_event.dart';
 part 'task_state.dart';
 
+int hostBit = 0;
+
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
-  static const String baseUrl = "https://full-stack-intern-assignment.vercel.app/api/tasks";
+  static final String baseUrl = (hostBit == 1)
+      ? "https://full-stack-intern-assignment.vercel.app/api/tasks"
+      : "http://localhost:5000/api/tasks";
 
   TaskBloc() : super(TaskInitial()) {
     on<GetAllTask>(_onGetAllTask);
     on<CreateTask>(_onCreateTask);
     on<UpdateTask>(_onUpdateTask);
     on<DeleteTask>(_onDeleteTask);
+    on<GetAutoGenData>(_onAutoGenData);
   }
 
   Future<void> _onDeleteTask(DeleteTask event, Emitter<TaskState> emit) async {
@@ -60,8 +65,60 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     }
   }
 
+  Future<void> _onAutoGenData(
+    GetAutoGenData event,
+    Emitter<TaskState> emit,
+  ) async {
+    try {
+      print("hi");
+      emit(LoadingGettingAutoGenDataState());
+      final uri = Uri.parse("$baseUrl/auto-gen-data");
+      print(uri.path);
+      final response = await http.post(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "title": event.title,
+          "description": event.description,
+          "dateTime": event.date,
+          "assignedTo": event.assignedTo,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        print(body);
+        DateTime? parsedDueDate;
+        final rawDate = body['due_date'];
+
+        if (rawDate is String && rawDate.isNotEmpty) {
+          parsedDueDate = DateTime.tryParse(rawDate);
+        }
+
+        emit(
+          GotAutoGenDataState(
+            priority: body['priority'] ?? '',
+            category: body['category'] ?? '',
+            due_date: parsedDueDate,
+            assigned_to: body['assigned_to'] ?? '',
+          ),
+        );
+      } else {
+        print(jsonDecode(response.body));
+        emit(
+          ErrorGettingAutoGenDataState(
+            message:
+                "Failed to create task: ${response.statusCode} ${response.reasonPhrase}",
+          ),
+        );
+      }
+    } catch (err) {
+      emit(ErrorCreatingTaskState(message: err.toString()));
+    }
+  }
+
   Future<void> _onCreateTask(CreateTask event, Emitter<TaskState> emit) async {
-    emit(TaskLoadingState());
+    emit(TaskLoadingState()); 
 
     try {
       final uri = Uri.parse(baseUrl);
@@ -71,10 +128,14 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
         body: jsonEncode({
           "title": event.title,
           "description": event.description,
+          "dateTime": event.dueDate?.toIso8601String(),
+          "assignedTo": event.assignedTo,
+          "category": event.category,
+          "priority": event.priority
         }),
       );
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
+      if (response.statusCode == 201) {
         emit(TaskCreatedState());
       } else {
         emit(
@@ -93,7 +154,18 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     emit(TaskLoadingState());
 
     try {
-      final uri = Uri.parse(baseUrl);
+      bool isCat = false;
+      String url = baseUrl;
+      if (event.category != null) {
+        url += "?cat=${event.category!}";
+        isCat = true;
+      }
+      if (event.priority != null) {
+        url += "${isCat ? "&" : "?"}pr=${event.priority!}";
+      }
+
+      print(url);
+      final uri = Uri.parse(url);
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {

@@ -11,9 +11,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateTaskDto = void 0;
 const class_validator_1 = require("class-validator");
+const task_enums_1 = require("../enums/task.enums");
 class CreateTaskDto {
     title;
     description;
+    dateTime;
+    assignedTo;
+    category;
+    priority;
 }
 exports.CreateTaskDto = CreateTaskDto;
 __decorate([
@@ -26,3 +31,23 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", Date)
+], CreateTaskDto.prototype, "dateTime", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateTaskDto.prototype, "assignedTo", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsEnum)(task_enums_1.Category),
+    __metadata("design:type", Object)
+], CreateTaskDto.prototype, "category", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsEnum)(task_enums_1.Priority),
+    __metadata("design:type", Object)
+], CreateTaskDto.prototype, "priority", void 0);

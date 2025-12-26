@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid'
+import { v4 as uuidv4 } from 'uuid';
 import { categoryMap } from './predefined/category.keyword';
 import { priorityMap } from './predefined/priority.keyword';
 import { actionVerbs } from './predefined/action.keyword';
@@ -16,7 +16,9 @@ export class TaskUtilities {
     text = text.toLowerCase();
 
     for (const [key, val] of categoryMap.entries()) {
-      if (val.some((keyword) => text.includes(keyword))) return key;
+      for (const keyword of val) {
+        if (new RegExp(`\\b${keyword}\\b`, 'i').test(text)) return key;
+      }
     }
     return 'general';
   }
@@ -26,18 +28,25 @@ export class TaskUtilities {
     text = text.toLowerCase();
 
     for (const [key, val] of priorityMap.entries()) {
-      if (val.some((keyword) => text.includes(keyword))) return key;
+      for (const keyword of val) {
+        if (new RegExp(`\\b${keyword}\\b`, 'i').test(text)) return key;
+      }
     }
     return 'low';
   }
 
   extractDueDate(description: string): Date | null {
     if (!description) return null;
+    const text = description.toLowerCase();
+
 
     const dateRegex =
-      /\b(today|tomorrow|tonight|this week|next week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}\s?(?:am|pm)|\b\d{1,2}(?:st|nd|rd|th)?\s(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b)/i;
+      /\b(today|tomorrow|tonight|this week|next week|next month|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i;
 
-    const match = description.match(dateRegex);
+    const numericDateRegex =
+      /\b(\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?|\b\d{1,2}(?:st|nd|rd|th)?\s(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t)?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)(?:\s\d{4})?)\b/i;
+
+    const match = description.match(dateRegex) || description.match(numericDateRegex);
     if (!match) return null;
 
     const phrase = match[1] || match[0];
@@ -53,10 +62,14 @@ export class TaskUtilities {
         const tonight = new Date(now);
         tonight.setHours(20, 0, 0, 0);
         return tonight;
-      case 'next week':
-        return new Date(now.getTime() + 7 * dayMs);
       case 'this week':
         return now;
+      case 'next week':
+        return new Date(now.getTime() + 7 * dayMs);
+      case 'next month':
+        const nextMonth = new Date(now);
+        nextMonth.setMonth(now.getMonth() + 1);
+        return nextMonth;
       default:
         const parsed = Date.parse(phrase);
         return isNaN(parsed) ? null : new Date(parsed);
@@ -65,31 +78,34 @@ export class TaskUtilities {
 
   extractAssignedPerson(description: string): string | null {
     if (!description) return null;
-
     const regex =
-      /\b(?:assign(?:ed)?\s*to|with|by|for|to)\s+([A-Z][A-Za-z]+(?:\s[A-Z][A-Za-z]+)*)/i;
+      /\b(?:assign(?:ed)?\s*to|with|by|for|to)\s+([A-Z][A-Za-z]+(?:\s[A-Z][A-Za-z]+){0,2})/;
     const match = description.match(regex);
-    return match ? match[1] : null;
+    return match ? match[1].trim() : null;
   }
 
   extractDates(description: string): string[] {
     if (!description) return [];
     const regex =
-      /\b(today|tomorrow|tonight|this week|next week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}\s?(?:am|pm)|\b\d{1,2}(?:st|nd|rd|th)?\s(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b)/gi;
-    return Array.from(description.matchAll(regex), (m) => m[1] || m[0]);
+      /\b(today|tomorrow|tonight|this week|next week|next month|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?|\d{1,2}(?:st|nd|rd|th)?\s(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t)?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)(?:\s\d{4})?)\b/gi;
+
+    const matches = Array.from(description.matchAll(regex), (m) => m[1] || m[0]);
+    return [...new Set(matches.map((d) => d.trim()))];
   }
 
   extractLocations(description: string): string[] {
     if (!description) return [];
-    const regex = /\b(?:at|in)\s+([A-Za-z]+(?:\s[A-Za-z]+)?)/g;
-    return Array.from(description.matchAll(regex), (m) => m[1]);
+    const regex = /\b(?:at|in|near|from)\s+([A-Z][A-Za-z]+(?:\s[A-Z][A-Za-z]+)?)/g;
+    const matches = Array.from(description.matchAll(regex), (m) => m[1].trim());
+    return [...new Set(matches)];
   }
 
   extractActions(description: string): string[] {
     if (!description) return [];
-    return actionVerbs.filter((verb) =>
+    const actions = actionVerbs.filter((verb) =>
       new RegExp(`\\b${verb}\\b`, 'i').test(description),
     );
+    return [...new Set(actions)];
   }
 
   getSuggestedActions(category: CategoryKey): string[] {
@@ -99,22 +115,22 @@ export class TaskUtilities {
       []
     );
   }
+
+  extractEntities(description: string) {
+    return {
+      assigned_to: this.extractAssignedPerson(description),
+      dates: this.extractDates(description),
+      locations: this.extractLocations(description),
+      actions: this.extractActions(description),
+    };
+  }
 }
+
 
 const suggested_actions: Record<CategoryKey, string[]> = {
   scheduling: ['Block calendar', 'Send invite', 'Prepare agenda', 'Set reminder'],
   finance: ['Check budget', 'Get approval', 'Generate invoice', 'Update records'],
-  technical: [
-    'Diagnose issue',
-    'Check resources',
-    'Assign technician',
-    'Document fix',
-  ],
-  safety: [
-    'Conduct inspection',
-    'File report',
-    'Notify supervisor',
-    'Update checklist',
-  ],
+  technical: ['Diagnose issue', 'Check resources', 'Assign technician', 'Document fix'],
+  safety: ['Conduct inspection', 'File report', 'Notify supervisor', 'Update checklist'],
   general: ['Review task', 'Add notes', 'Set reminder'],
 };

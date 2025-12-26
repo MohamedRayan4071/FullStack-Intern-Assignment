@@ -8,7 +8,7 @@ import 'package:task_manager_frontend/bloc/dto/update_dto.dart';
 part 'task_event.dart';
 part 'task_state.dart';
 
-int hostBit = 0;
+int hostBit = 1;
 
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
   static final String baseUrl = (hostBit == 1)

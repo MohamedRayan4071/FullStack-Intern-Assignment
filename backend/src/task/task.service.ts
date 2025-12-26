@@ -22,20 +22,30 @@ export class TaskService {
     private readonly taskUtilities: TaskUtilities,
   ) { }
 
-async getAllTasks(limit = 10, offset = 0): Promise<GetTaskDTO[]> {
-  const tasks = await this.taskRepository
-    .createQueryBuilder('task')
-    .leftJoinAndSelect('task.taskHistory', 'history')
-    .orderBy('task.created_at', 'DESC')
-    .limit(limit)
-    .offset(offset)
-    .getMany();
+  async getAllTasks(category: string | undefined, priority: string | undefined, limit = 10, offset = 0): Promise<GetTaskDTO[]> {
+    const qb = this.taskRepository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.taskHistory', 'history')
+      .orderBy('task.created_at', 'DESC')
+      .limit(limit)
+      .offset(offset);
 
-  return tasks.map((t) => plainToInstance(GetTaskDTO, t));
-}
+    if (category && priority) {
+      qb.where('task.category = :category', { category })
+        .andWhere('task.priority = :priority', { priority });
+    } else if (category) {
+      qb.where('task.category = :category', { category });
+    } else if (priority) {
+      qb.where('task.priority = :priority', { priority });
+    }
+
+    const tasks = await qb.getMany()
+
+    return tasks.map((t) => plainToInstance(GetTaskDTO, t));
+  }
 
   async getTask(id: string): Promise<Task | null> {
-    return this.taskRepository.findOne({ where: { id } , relations: ['taskHistory']});
+    return this.taskRepository.findOne({ where: { id }, relations: ['taskHistory'] });
   }
 
   async createTask(createTaskData: CreateTaskDto): Promise<Task> {

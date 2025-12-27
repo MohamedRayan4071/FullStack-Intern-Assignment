@@ -97,8 +97,10 @@ class _HomePageState extends State<HomePage> {
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 12,
+                  runSpacing: 12,
                   children: [
                     SummaryCard(
                       child: BlocBuilder<TaskBloc, TaskState>(
@@ -121,103 +123,108 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     SummaryCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          Row(
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text("Category: "),
-                              FilterCard(
-                                type: FilterEnum.category,
-                                initialValue: selectedCategory,
-                                callBack: (val) =>
-                                    setState(() => selectedCategory = val),
+                              Row(
+                                children: [
+                                  const Text("Category: "),
+                                  FilterCard(
+                                    type: FilterEnum.category,
+                                    initialValue: selectedCategory,
+                                    callBack: (val) =>
+                                        setState(() => selectedCategory = val),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  const Text("Priority: "),
+                                  FilterCard(
+                                    type: FilterEnum.priority,
+                                    initialValue: selectedPriority,
+                                    callBack: (val) =>
+                                        setState(() => selectedPriority = val),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              Row(
+                                children: [
+                                  ElevatedButton.icon(
+                                    icon: const Icon(Icons.filter_alt_rounded),
+                                    label: const Text("Filter"),
+                                    onPressed: () {
+                                      BlocProvider.of<TaskBloc>(context).add(
+                                        GetAllTask(
+                                          category: selectedCategory,
+                                          priority: selectedPriority,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(width: 10),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        selectedCategory = "any";
+                                        selectedPriority = "any";
+                                      });
+                                      BlocProvider.of<TaskBloc>(
+                                        context,
+                                      ).add(GetAllTask());
+                                    },
+                                    child: const Text("Reset"),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                          const SizedBox(height: 10),
-                          Row(
+                          Column(
                             children: [
-                              const Text("Priority: "),
-                              FilterCard(
-                                type: FilterEnum.priority,
-                                initialValue: selectedPriority,
-                                callBack: (val) =>
-                                    setState(() => selectedPriority = val),
+                              SizedBox(
+                                width: 48,
+                                height: 48,
+                                child: ElevatedButton(
+                                  onPressed: () =>
+                                      showCreateTaskDialog(context).then((val) {
+                                        if (val == null) return;
+                                        showConfirmTaskDialog(
+                                          context,
+                                          title: val['title'],
+                                          description: val['description'],
+                                          selectedDateTime: val['date'],
+                                          assignedTo: val['assignedTo'],
+                                          priority: val['priority'],
+                                          category: val['category'],
+                                        );
+                                      }),
+                                  style: ElevatedButton.styleFrom(
+                                    shape: const CircleBorder(),
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                  child: const Icon(Icons.add),
+                                ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            children: [
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.filter_alt_rounded),
-                                label: const Text("Filter"),
-                                onPressed: () {
-                                  BlocProvider.of<TaskBloc>(context).add(
-                                    GetAllTask(
-                                      category: selectedCategory,
-                                      priority: selectedPriority,
-                                    ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(width: 10),
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    selectedCategory = "any";
-                                    selectedPriority = "any";
-                                  });
-                                  BlocProvider.of<TaskBloc>(
-                                    context,
-                                  ).add(GetAllTask());
-                                },
-                                child: const Text("Reset"),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Create New",
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
                         ],
                       ),
                     ),
-                    SummaryCard(
-                      child: Column(
-                        children: [
-                          SizedBox(
-                            width: 48,
-                            height: 48,
-                            child: ElevatedButton(
-                              onPressed: () =>
-                                  showCreateTaskDialog(context).then((val) {
-                                    if (val == null) return;
-                                    showConfirmTaskDialog(
-                                      context,
-                                      title: val['title'],
-                                      description: val['description'],
-                                      selectedDateTime: val['date'],
-                                      assignedTo: val['assignedTo'],
-                                      priority: val['priority'],
-                                      category: val['category'],
-                                    );
-                                  }),
-                              style: ElevatedButton.styleFrom(
-                                shape: const CircleBorder(),
-                                padding: EdgeInsets.zero,
-                              ),
-                              child: const Icon(Icons.add),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Create New Task",
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                    ),
+
                   ],
                 ),
+
                 const SizedBox(height: 20),
 
                 BlocBuilder<TaskBloc, TaskState>(
@@ -245,7 +252,7 @@ class _HomePageState extends State<HomePage> {
                         physics: const NeverScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(16),
                         itemCount: tasks.length,
-                        separatorBuilder: (_, __) => const Divider(),
+                        separatorBuilder: (_, _) => const Divider(),
                         itemBuilder: (context, i) {
                           final task = tasks[i];
                           return TaskCard(

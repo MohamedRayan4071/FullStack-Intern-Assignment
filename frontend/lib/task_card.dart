@@ -121,10 +121,10 @@ class TaskCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 10),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
                 children: [
                   Text(
                     task.assignedTo?.isNotEmpty == true
@@ -135,7 +135,7 @@ class TaskCard extends StatelessWidget {
                   Text("📅 $dueDate", style: const TextStyle(fontSize: 13)),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
 
               Text(
                 task.description ?? "No description provided.",
